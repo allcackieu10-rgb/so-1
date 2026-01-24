@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Danh Sách Phim - Hỏi Google</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 700px; margin: 0 auto; padding: 20px; background: #f4f6f9; color: #333; }
+        h1, h2 { color: #1a3c6d; }
+        input { padding: 12px; width: 100%; margin: 10px 0; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; }
+        button { padding: 12px 20px; background: #34a853; color: white; border: none; border-radius: 6px; cursor: pointer; margin-right: 10px; }
+        button:hover { background: #2d8e44; }
+        .delete-btn { background: #dc3545; padding: 6px 12px; font-size: 0.9em; }
+        .delete-btn:hover { background: #c82333; }
+        ul { list-style: none; padding: 0; }
+        li { background: white; padding: 12px; margin: 8px 0; border-radius: 6px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        #result { margin-top: 20px; padding: 15px; background: white; border-radius: 8px; border: 1px solid #ddd; min-height: 100px; line-height: 1.6; }
+        .loading { color: #666; font-style: italic; }
+        .error { color: #dc3545; font-weight: bold; }
+        .google-btn { background: #4285f4; } .google-btn:hover { background: #357ae8; }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+</head>
+<body>
+    <h1>Danh Sách Phim Đã Xem</h1>
+
+    <input type="text" id="movieInput" placeholder="Nhập tên phim... (ví dụ: Inception)">
+    <button onclick="addMovie()">Thêm vào danh sách</button>
+
+    <ul id="movieList"></ul>
+
+    <button onclick="downloadPDF()">Tải PDF danh sách</button>
+
+    <h2>Kiểm tra phần mới (hỏi Google nhanh)</h2>
+    <input type="text" id="searchInput" placeholder="Nhập tên phim (ví dụ: Dune, Deadpool)">
+    <button class="google-btn" onclick="askGoogle()">Hỏi Google</button>
+
+    <div id="result">Nhấn nút "Hỏi Google" để mở tab tìm kiếm tự động về phần mới, sequel, ngày ra mắt phim.</div>
+
+    <script>
+        let movies = JSON.parse(localStorage.getItem('watchedMovies')) || [];
+        renderList();
+
+        function addMovie() {
+            const input = document.getElementById('movieInput');
+            const name = input.value.trim();
+            if (name) {
+                movies.push(name);
+                localStorage.setItem('watchedMovies', JSON.stringify(movies));
+                renderList();
+                input.value = '';
+            }
+        }
+
+        function deleteMovie(index) {
+            if (confirm('Xóa phim này?')) {
+                movies.splice(index, 1);
+                localStorage.setItem('watchedMovies', JSON.stringify(movies));
+                renderList();
+            }
+        }
+
+        function renderList() {
+            const ul = document.getElementById('movieList');
+            ul.innerHTML = '';
+            movies.forEach((movie, i) => {
+                const li = document.createElement('li');
+                li.innerHTML = `${movie} <button class="delete-btn" onclick="deleteMovie(${i})">Xóa</button>`;
+                ul.appendChild(li);
+            });
+        }
+
+        function downloadPDF() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            doc.setFontSize(18);
+            doc.text('Danh Sách Phim Đã Xem', 105, 20, { align: 'center' });
+            doc.setFontSize(12);
+            movies.forEach((m, i) => {
+                doc.text(`${i+1}. ${m}`, 20, 40 + i*10);
+            });
+            doc.save('phim-da-xem.pdf');
+        }
+
+        function askGoogle() {
+            const query = document.getElementById('searchInput').value.trim();
+            if (!query) {
+                alert('Nhập tên phim đi!');
+                return;
+            }
+
+            // Tạo query Google thông minh: tìm phần mới, sequel, release date, cập nhật 2026
+            const googleQuery = encodeURIComponent(`phim ${query} phần mới sequel phần tiếp theo ngày ra mắt trailer 2026 OR 2025`);
+            const googleUrl = `https://www.google.com/search?q=${googleQuery}`;
+
+            // Mở tab mới
+            window.open(googleUrl, '_blank');
+            document.getElementById('result').innerHTML = `Đã mở tab Google tìm kiếm: "<strong>${query} phần mới</strong>".<br>Kiểm tra kết quả để xem có sequel chưa nhé!`;
+        }
+    </script>
+</body>
+</html>
