@@ -3,100 +3,171 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Danh Sách Phim - Hỏi Google</title>
+    <title>Danh sách phim đã xem</title>
+
     <style>
-        body { font-family: Arial, sans-serif; max-width: 700px; margin: 0 auto; padding: 20px; background: #f4f6f9; color: #333; }
-        h1, h2 { color: #1a3c6d; }
-        input { padding: 12px; width: 100%; margin: 10px 0; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; }
-        button { padding: 12px 20px; background: #34a853; color: white; border: none; border-radius: 6px; cursor: pointer; margin-right: 10px; }
-        button:hover { background: #2d8e44; }
-        .delete-btn { background: #dc3545; padding: 6px 12px; font-size: 0.9em; }
-        .delete-btn:hover { background: #c82333; }
-        ul { list-style: none; padding: 0; }
-        li { background: white; padding: 12px; margin: 8px 0; border-radius: 6px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-        #result { margin-top: 20px; padding: 15px; background: white; border-radius: 8px; border: 1px solid #ddd; min-height: 100px; line-height: 1.6; }
-        .loading { color: #666; font-style: italic; }
-        .error { color: #dc3545; font-weight: bold; }
-        .google-btn { background: #4285f4; } .google-btn:hover { background: #357ae8; }
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 720px;
+            margin: auto;
+            padding: 20px;
+            background: #f4f6f9;
+        }
+
+        h1, h2 {
+            color: #1a3c6d;
+        }
+
+        input {
+            width: 100%;
+            padding: 12px;
+            margin: 10px 0;
+            border-radius: 6px;
+            border: 1px solid #ccc;
+            box-sizing: border-box;
+        }
+
+        button {
+            padding: 12px 18px;
+            border-radius: 6px;
+            border: none;
+            cursor: pointer;
+            background: #34a853;
+            color: white;
+            margin-right: 5px;
+        }
+
+        button:hover {
+            opacity: 0.9;
+        }
+
+        .delete-btn {
+            background: #dc3545;
+            padding: 6px 12px;
+        }
+
+        ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        li {
+            background: white;
+            margin: 8px 0;
+            padding: 12px;
+            border-radius: 6px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        #result {
+            margin-top: 15px;
+            padding: 12px;
+            background: white;
+            border-radius: 6px;
+            border: 1px solid #ddd;
+        }
+
+        .google-btn {
+            background: #4285f4;
+        }
     </style>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </head>
+
 <body>
-    <h1>Danh Sách Phim Đã Xem</h1>
 
-    <input type="text" id="movieInput" placeholder="Nhập tên phim... (ví dụ: Inception)">
-    <button onclick="addMovie()">Thêm vào danh sách</button>
+<h1>🎬 Danh sách phim đã xem</h1>
 
-    <ul id="movieList"></ul>
+<input id="movieInput" placeholder="Nhập tên phim...">
+<button id="addBtn">➕ Thêm phim</button>
 
-    <button onclick="downloadPDF()">Tải PDF danh sách</button>
+<ul id="movieList"></ul>
 
-    <h2>Kiểm tra phần mới (hỏi Google nhanh)</h2>
-    <input type="text" id="searchInput" placeholder="Nhập tên phim (ví dụ: Dune, Deadpool)">
-    <button class="google-btn" onclick="askGoogle()">Hỏi Google</button>
+<h2>🔍 Kiểm tra phần mới</h2>
+<input id="searchInput" placeholder="Nhập tên phim (Dune, Deadpool...)">
+<button class="google-btn" id="googleBtn">Hỏi Google</button>
 
-    <div id="result">Nhấn nút "Hỏi Google" để mở tab tìm kiếm tự động về phần mới, sequel, ngày ra mắt phim.</div>
+<div id="result">Nhập tên phim và bấm "Hỏi Google"</div>
 
-    <script>
-        let movies = JSON.parse(localStorage.getItem('watchedMovies')) || [];
-        renderList();
+<script>
+document.addEventListener('DOMContentLoaded', () => {
 
-        function addMovie() {
-            const input = document.getElementById('movieInput');
-            const name = input.value.trim();
-            if (name) {
-                movies.push(name);
-                localStorage.setItem('watchedMovies', JSON.stringify(movies));
-                renderList();
-                input.value = '';
-            }
-        }
+    const movieInput  = document.getElementById('movieInput');
+    const movieList   = document.getElementById('movieList');
+    const addBtn      = document.getElementById('addBtn');
+    const searchInput = document.getElementById('searchInput');
+    const googleBtn   = document.getElementById('googleBtn');
+    const resultBox   = document.getElementById('result');
 
-        function deleteMovie(index) {
-            if (confirm('Xóa phim này?')) {
-                movies.splice(index, 1);
-                localStorage.setItem('watchedMovies', JSON.stringify(movies));
-                renderList();
-            }
-        }
+    let movies = JSON.parse(localStorage.getItem('watchedMovies')) || [];
 
-        function renderList() {
-            const ul = document.getElementById('movieList');
-            ul.innerHTML = '';
-            movies.forEach((movie, i) => {
-                const li = document.createElement('li');
-                li.innerHTML = `${movie} <button class="delete-btn" onclick="deleteMovie(${i})">Xóa</button>`;
-                ul.appendChild(li);
+    function save() {
+        localStorage.setItem('watchedMovies', JSON.stringify(movies));
+    }
+
+    function render() {
+        movieList.innerHTML = '';
+        movies.forEach((movie, index) => {
+            const li = document.createElement('li');
+
+            li.innerHTML = `
+                <span>${movie}</span>
+                <button class="delete-btn">Xóa</button>
+            `;
+
+            li.querySelector('button').addEventListener('click', () => {
+                if (confirm('Xóa phim này?')) {
+                    movies.splice(index, 1);
+                    save();
+                    render();
+                }
             });
+
+            movieList.appendChild(li);
+        });
+    }
+
+    function addMovie() {
+        const name = movieInput.value.trim();
+        if (!name) return;
+
+        if (movies.includes(name)) {
+            alert('Phim này đã có trong danh sách!');
+            return;
         }
 
-        function downloadPDF() {
-            const { jsPDF } = window.jspdf;
-            const doc = new jsPDF();
-            doc.setFontSize(18);
-            doc.text('Danh Sách Phim Đã Xem', 105, 20, { align: 'center' });
-            doc.setFontSize(12);
-            movies.forEach((m, i) => {
-                doc.text(`${i+1}. ${m}`, 20, 40 + i*10);
-            });
-            doc.save('phim-da-xem.pdf');
+        movies.push(name);
+        save();
+        render();
+        movieInput.value = '';
+    }
+
+    function askGoogle() {
+        const q = searchInput.value.trim();
+        if (!q) {
+            alert('Nhập tên phim trước đã!');
+            return;
         }
 
-        function askGoogle() {
-            const query = document.getElementById('searchInput').value.trim();
-            if (!query) {
-                alert('Nhập tên phim đi!');
-                return;
-            }
+        const query = encodeURIComponent(`${q} sequel phần tiếp theo ngày ra mắt`);
+        const url = `https://www.google.com/search?q=${query}`;
+        window.open(url, '_blank');
 
-            // Tạo query Google thông minh: tìm phần mới, sequel, release date, cập nhật 2026
-            const googleQuery = encodeURIComponent(`phim ${query} phần mới sequel phần tiếp theo ngày ra mắt trailer 2026 OR 2025`);
-            const googleUrl = `https://www.google.com/search?q=${googleQuery}`;
+        resultBox.innerHTML = `🔎 Đang tìm Google cho: <b>${q}</b>`;
+    }
 
-            // Mở tab mới
-            window.open(googleUrl, '_blank');
-            document.getElementById('result').innerHTML = `Đã mở tab Google tìm kiếm: "<strong>${query} phần mới</strong>".<br>Kiểm tra kết quả để xem có sequel chưa nhé!`;
-        }
-    </script>
+    addBtn.addEventListener('click', addMovie);
+    movieInput.addEventListener('keypress', e => {
+        if (e.key === 'Enter') addMovie();
+    });
+
+    googleBtn.addEventListener('click', askGoogle);
+
+    render();
+});
+</script>
+
 </body>
 </html>
